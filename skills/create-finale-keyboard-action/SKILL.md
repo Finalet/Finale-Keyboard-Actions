@@ -34,13 +34,13 @@ If network access, credentials, billing, or safe test resources prevent a live t
 
 ## Exact import format
 
-The file contains **one JSON object**, not an array, Markdown block, preferences dump, or wrapper. Its required top-level fields are:
+The file contains **one JSON object**, not an array, Markdown block, preferences dump, or wrapper. Its top-level fields are:
 
-| Field                         | Type                    | Requirement                                                                                                                |
-| ----------------------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `name`                        | string                  | A useful action name, 1–256 characters.                                                                                    |
-| `kind`                        | object                  | Exactly one case: `Fetch` or `Trigger`, with the nested `config` object. Case-sensitive.                                   |
-| `runtimeVariablePlaceholders` | object of string values | Include even when empty: `{}`. Keys are complete runtime tokens including braces. Values are harmless app-testing samples. |
+| Field                         | Type                    | Requirement                                                                                                                                     |
+| ----------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                        | string                  | Required. A useful action name, 1–256 characters.                                                                                               |
+| `kind`                        | object                  | Required. Exactly one case: `Fetch` or `Trigger`, with the nested `config` object. Case-sensitive.                                              |
+| `runtimeVariablePlaceholders` | object of string values | Optional. Omit when no runtime variables are referenced; omission imports as nil. When used, keys are complete runtime tokens including braces. |
 
 Do not include `id`: Finale assigns a fresh ID on import. Do not add a schema version, credentials dictionary, variable definitions, or long press key assignment. The import decoder does not run all editor checks, so successful import alone does not prove a useful action.
 
@@ -58,13 +58,12 @@ Below is **an example** of Finale's "My public IP" action. It returns one format
           "method": "GET",
           "url": "https://api.ipify.org?format=json"
         },
+        "readFields": ["ip"],
         "template": "My IP is {0}",
-        "resultMode": "single",
-        "readFields": ["ip"]
+        "resultMode": "single"
       }
     }
-  },
-  "runtimeVariablePlaceholders": {}
+  }
 }
 ```
 
@@ -137,7 +136,7 @@ Only these runtime tokens are supported:
 | `{device_timezone_name}`   | Device time zone identifier, such as `America/New_York`.                           |
 | `{device_timezone_utc}`    | Current UTC offset formatted like `UTC-04:00`.                                     |
 
-Add representative samples to `runtimeVariablePlaceholders` for every runtime token referenced by the request. These are **test samples only**, not defaults, prompts, credentials, or values used on the keyboard. If a required live value is unavailable, the request does not run. There is no automatic selection-to-clipboard fallback.
+Include `runtimeVariablePlaceholders` only when a request references runtime variables. Include an entry for every referenced runtime token, across all HTTP requests in Fetch and all Trigger options, even if its sample value is an empty string. Prefer representative nonempty samples when available. These are **test samples only**, not defaults, prompts, credentials, or values used on the keyboard. If a required live value is unavailable, the request does not run. There is no automatic selection-to-clipboard fallback.
 
 Runtime tokens are detected in the URL, header names/values, and the body of non-GET requests. Place tokens directly in the request; substitution is one pass, so nesting a runtime token inside a custom variable does not work. Tokens in the result template are not runtime substitutions.
 
@@ -200,8 +199,8 @@ Multiple mode does not zip parallel arrays. Reading `names` and then `values` co
 
 Before delivery:
 
-1. Save each action as a UTF-8 JSON file named after its name field, followed by .json. For example, "name": "Translate to Russian" produces Translate to Russian.json. Parse the saved bytes again. Verify the required fields, casing, types, request methods, names, and exactly one kind. Do not rely on omitted-field defaults.
-2. Enumerate request tokens. Every token must be a supported runtime token with an appropriate test sample or a documented custom variable. Ensure no accidental unresolved placeholders remain and no credentials were embedded.
+1. Save each action as a UTF-8 JSON file named after its name field, followed by .json. For example, "name": "Translate to Russian" produces Translate to Russian.json. Parse the saved bytes again. Verify the required fields, casing, types, request methods, names, and exactly one kind. Do not rely on omitted required fields being defaulted.
+2. Enumerate tokens in every request. For each supported runtime token, a matching `runtimeVariablePlaceholders` entry must exist (its sample may be empty). For each user-defined token, document the exact variable name the user must create and verify it produces that token; do not put user-defined tokens in `runtimeVariablePlaceholders`. Ensure no accidental unresolved tokens or embedded credentials remain.
 3. Resolve representative test inputs with Finale's exact encoding rules. Validate the resolved URL, headers, and body. For Fetch, evaluate every read path and the complete template against the observed API response; verify final strings and grouping. For Trigger, distinguish request validation from an authorized live service test.
 
 Return a clickable link/attachment to the JSON file. Avoid typing the resulting JSON in your response, attach the completed file instead. Keep the accompanying explanation limited to:
@@ -218,4 +217,4 @@ Throughout the interaction with the user use a friendly, clear tone and assume n
 
 ## Compatibility basis
 
-This contract was reviewed against Finale Keyboard source on 2026-09-28.
+This contract was reviewed against Finale Keyboard source on 2026-09-29.
