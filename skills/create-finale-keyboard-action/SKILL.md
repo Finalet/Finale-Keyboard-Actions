@@ -40,7 +40,7 @@ The file contains **one JSON object**, not an array, Markdown block, preferences
 | ----------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | `name`                        | string                  | Required. A useful action name, 1–256 characters.                                                                                               |
 | `kind`                        | object                  | Required. Exactly one case: `Fetch` or `Trigger`, with the nested `config` object. Case-sensitive.                                              |
-| `runtimeVariablePlaceholders` | object of string values | Optional. Omit when no runtime variables are referenced; omission imports as nil. When used, keys are complete runtime tokens including braces. |
+| `dynamicVariablePlaceholders` | object of string values | Optional. Omit when no dynamic variables are referenced; omission imports as nil. When used, keys are complete dynamic tokens including braces. |
 
 Do not include `id`: Finale assigns a fresh ID on import. Do not add a schema version, credentials dictionary, variable definitions, or long press key assignment. The import decoder does not run all editor checks, so successful import alone does not prove a useful action.
 
@@ -96,7 +96,7 @@ This is a **structure-only example**, not a working endpoint. Replace the URL an
       }
     }
   },
-  "runtimeVariablePlaceholders": {
+  "dynamicVariablePlaceholders": {
     "{selected_text}": "Hello, world!"
   }
 }
@@ -117,11 +117,11 @@ Set `Content-Type` explicitly when sending JSON or another body format; Finale d
 
 ## Variables and encoding
 
-Actions can use two types of variables in HTTP requests. **Runtime variables** supply live keyboard or device context when an action runs, such as the selected text or current keyboard language. **User-defined variables** hold values the user saves in Finale, such as an API key or service identifier, and can be reused across actions. Reference either type with a token in braces, such as `{selected_text}` or `{service_api_key}`; Finale substitutes its value before sending the request.
+Actions can use two types of variables in HTTP requests. **Dynamic variables** supply live keyboard or device context when an action runs, such as the selected text or current keyboard language. **User-defined variables** hold values the user saves in Finale, such as an API key or service identifier, and can be reused across actions. Reference either type with a token in braces, such as `{selected_text}` or `{service_api_key}`; Finale substitutes its value before sending the request.
 
-### Live runtime variables
+### Live dynamic variables
 
-Only these runtime tokens are supported:
+Only these dynamic tokens are supported:
 
 | Token                      | Value at keyboard execution                                                        |
 | -------------------------- | ---------------------------------------------------------------------------------- |
@@ -136,9 +136,9 @@ Only these runtime tokens are supported:
 | `{device_timezone_name}`   | Device time zone identifier, such as `America/New_York`.                           |
 | `{device_timezone_utc}`    | Current UTC offset formatted like `UTC-04:00`.                                     |
 
-Include `runtimeVariablePlaceholders` only when a request references runtime variables. Include an entry for every referenced runtime token, across all HTTP requests in Fetch and all Trigger options, even if its sample value is an empty string. Prefer representative nonempty samples when available. These are **test samples only**, not defaults, prompts, credentials, or values used on the keyboard. If a required live value is unavailable, the request does not run. There is no automatic selection-to-clipboard fallback.
+Include `dynamicVariablePlaceholders` only when a request references dynamic variables. Include an entry for every referenced dynamic token, across all HTTP requests in Fetch and all Trigger options, even if its sample value is an empty string. Prefer representative nonempty samples when available. These are **test samples only**, not defaults, prompts, credentials, or values used on the keyboard. If a required live value is unavailable, the request does not run. There is no automatic selection-to-clipboard fallback.
 
-Runtime tokens are detected in the URL, header names/values, and the body of non-GET requests. Place tokens directly in the request; substitution is one pass, so nesting a runtime token inside a custom variable does not work. Tokens in the result template are not runtime substitutions.
+Dynamic tokens are detected in the URL, header names/values, and the body of non-GET requests. Place tokens directly in the request; substitution is one pass, so nesting a dynamic token inside a custom variable does not work. Tokens in the result template are not dynamic substitutions.
 
 ### User-defined variables
 
@@ -151,16 +151,16 @@ To populate a user-defined variable, give the user these steps:
 
 Store secrets and user-specific configuration as Finale global HTTP request variables, referenced by tokens such as `{service_api_key}`. Their values are not included in the action transfer file. Give exact variable names and explain how to populate them in Finale's **Variables** screen.
 
-Names are trimmed, lowercased, and whitespace-separated words joined by underscores: `Service API Key` becomes `{service_api_key}`. Use ASCII letters, digits, and underscores for predictable names. Do not collide with runtime names. Unresolved tokens remain literal; they do not prompt for input. Keep secrets out of the JSON and `runtimeVariablePlaceholders`; the Variables editor displays saved values, so do not describe it as a secret vault.
+Names are trimmed, lowercased, and whitespace-separated words joined by underscores: `Service API Key` becomes `{service_api_key}`. Use ASCII letters, digits, and underscores for predictable names. Do not collide with dynamic names. Unresolved tokens remain literal; they do not prompt for input. Keep secrets out of the JSON and `dynamicVariablePlaceholders`; the Variables editor displays saved values, so do not describe it as a secret vault.
 
 Whenever instructing the user to create a variable, provide the exact human-readable name to enter and its resulting token. For example: enter API Token in the Name field to create {api_token}. Ensure the name normalizes to the token used in the action JSON; do not tell the user to enter the token itself as the name.
 
 ### Substitution rules that affect API choice
 
-- In URLs, runtime values are percent-encoded as a component. Keep `{selected_text}` literal in the stored URL; do not pre-encode it or its sample value. This encoding is unsuitable for injecting an entire runtime URL.
-- In bodies with resolved `Content-Type: application/json` or `application/*+json` (optional parameters allowed), runtime values are JSON-escaped **without surrounding quotes**. Put free-text tokens inside a quoted JSON string, as in the Trigger example.
-- Runtime substitutions into header names/values and non-JSON bodies are verbatim. In particular, `application/x-www-form-urlencoded` bodies do **not** form-encode runtime text. Prefer a supported JSON body or query parameter for arbitrary selection/clipboard text.
-- User-defined variables are inserted verbatim everywhere, including URLs and JSON bodies. If a custom value requires URL or JSON-string encoding, document the exact required representation or choose a request shape that avoids it. Do not assume runtime escaping applies to API keys or other custom values.
+- In URLs, dynamic values are percent-encoded as a component. Keep `{selected_text}` literal in the stored URL; do not pre-encode it or its sample value. This encoding is unsuitable for injecting an entire dynamic URL.
+- In bodies with resolved `Content-Type: application/json` or `application/*+json` (optional parameters allowed), dynamic values are JSON-escaped **without surrounding quotes**. Put free-text tokens inside a quoted JSON string, as in the Trigger example.
+- Dynamic substitutions into header names/values and non-JSON bodies are verbatim. In particular, `application/x-www-form-urlencoded` bodies do **not** form-encode dynamic text. Prefer a supported JSON body or query parameter for arbitrary selection/clipboard text.
+- User-defined variables are inserted verbatim everywhere, including URLs and JSON bodies. If a custom value requires URL or JSON-string encoding, document the exact required representation or choose a request shape that avoids it. Do not assume dynamic escaping applies to API keys or other custom values.
 
 ## Extract and format Fetch results
 
@@ -179,7 +179,7 @@ Any missing path fails the entire Fetch result. At each selected path, Finale co
 
 Results from each `readFields` entry are concatenated in field order. Select a nested scalar such as `translations.0.text`, not its containing object. Selecting `items` for an array of objects does not extract each object's text property. Use explicit indices only when response length is guaranteed; otherwise prefer an API shape with the needed scalar or array of strings. Do not promise dynamic mapping across an arbitrary object array.
 
-`template` requires at least one numeric placeholder: `{0}`, `{1}`, and so on. These index the flattened extracted strings. Other text is literal. Runtime/global variables are not substituted here; there are no formatting functions, rounding, HTML decoding, or joins.
+`template` requires at least one numeric placeholder: `{0}`, `{1}`, and so on. These index the flattened extracted strings. Other text is literal. Dynamic/global variables are not substituted here; there are no formatting functions, rounding, HTML decoding, or joins.
 
 - `resultMode: "single"` formats one string from the full extracted list. Every referenced index must exist. Unreferenced values are ignored.
 - `resultMode: "multiple"` uses consecutive blocks of size `highest template index + 1`, applying the template to each block. Incomplete trailing blocks are discarded. With `{0}`, each value becomes a menu option. With `{0}: {1}`, `["a","1","b","2"]` becomes `["a: 1","b: 2"]`.
@@ -188,8 +188,8 @@ Multiple mode does not zip parallel arrays. Reading `names` and then `values` co
 
 ## Runtime behavior to account for
 
-- Fetch actions without referenced runtime variables are prefetched when assigned and the keyboard opens. Opening the long press menu returns cached results and starts a refresh for later use. The first result may be empty before loading, but that is rare. Do not promise a fresh response on every opening. This also affects billed API usage.
-- Fetch actions referencing runtime variables load when their options are requested and are not cached by the manager. Use live variables because the task needs them, not as an invented cache-control mechanism.
+- Fetch actions without referenced dynamic variables are prefetched when assigned and the keyboard opens. Opening the long press menu returns cached results and starts a refresh for later use. The first result may be empty before loading, but that is rare. Do not promise a fresh response on every opening. This also affects billed API usage.
+- Fetch actions referencing dynamic variables load when their options are requested and are not cached by the manager. Use live variables because the task needs them, not as an invented cache-control mechanism.
 - Fetch parsing does not require a 2xx status internally. Independently check status and service-level errors during validation so an error response cannot masquerade as useful output.
 - Trigger runs only the selected option. Any 2xx response is reported as success; this does not verify a service-level success flag or completion of an asynchronous job.
 - Choosing a Fetch result types its string into the input. Multi-character non-emoji strings are inserted with a trailing space. Input selection is normally replaced by insertion; reading previous words does not itself delete or replace them. Do not promise silent automatic replacement or exact whitespace preservation.
@@ -200,7 +200,7 @@ Multiple mode does not zip parallel arrays. Reading `names` and then `values` co
 Before delivery:
 
 1. Save each action as a UTF-8 JSON file named after its name field, followed by .json. For example, "name": "Translate to Russian" produces Translate to Russian.json. Parse the saved bytes again. Verify the required fields, casing, types, request methods, names, and exactly one kind. Do not rely on omitted required fields being defaulted.
-2. Enumerate tokens in every request. For each supported runtime token, a matching `runtimeVariablePlaceholders` entry must exist (its sample may be empty). For each user-defined token, document the exact variable name the user must create and verify it produces that token; do not put user-defined tokens in `runtimeVariablePlaceholders`. Ensure no accidental unresolved tokens or embedded credentials remain.
+2. Enumerate tokens in every request. For each supported dynamic token, a matching `dynamicVariablePlaceholders` entry must exist (its sample may be empty). For each user-defined token, document the exact variable name the user must create and verify it produces that token; do not put user-defined tokens in `dynamicVariablePlaceholders`. Ensure no accidental unresolved tokens or embedded credentials remain.
 3. Resolve representative test inputs with Finale's exact encoding rules. Validate the resolved URL, headers, and body. For Fetch, evaluate every read path and the complete template against the observed API response; verify final strings and grouping. For Trigger, distinguish request validation from an authorized live service test.
 
 Return a clickable link/attachment to the JSON file. Avoid typing the resulting JSON in your response, attach the completed file instead. Keep the accompanying explanation limited to:
