@@ -159,8 +159,9 @@ Whenever instructing the user to create a variable, provide the exact human-read
 
 - In URLs, dynamic values are percent-encoded as a component. Keep `{selected_text}` literal in the stored URL; do not pre-encode it or its sample value. This encoding is unsuitable for injecting an entire dynamic URL.
 - In bodies with resolved `Content-Type: application/json` or `application/*+json` (optional parameters allowed), dynamic values are JSON-escaped **without surrounding quotes**. Put free-text tokens inside a quoted JSON string, as in the Trigger example.
-- Dynamic substitutions into header names/values and non-JSON bodies are verbatim. In particular, `application/x-www-form-urlencoded` bodies do **not** form-encode dynamic text. Prefer a supported JSON body or query parameter for arbitrary selection/clipboard text.
-- User-defined variables are inserted verbatim everywhere, including URLs and JSON bodies. If a custom value requires URL or JSON-string encoding, document the exact required representation or choose a request shape that avoids it. Do not assume dynamic escaping applies to API keys or other custom values.
+- In bodies with resolved `Content-Type: application/x-www-form-urlencoded` (optional parameters allowed), dynamic values are percent-encoded as components. Keep tokens and their sample values unencoded.
+- Dynamic substitutions into header names/values and bodies with other content types are verbatim.
+- User-defined variables are inserted verbatim everywhere, including URLs, JSON bodies, and form bodies. If a custom value requires URL, JSON-string, or form encoding, document the exact required representation or choose a request shape that avoids it. Do not assume dynamic escaping applies to API keys or other custom values.
 
 ## Extract and format Fetch results
 
