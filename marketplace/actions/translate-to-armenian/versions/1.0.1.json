@@ -1,0 +1,26 @@
+{
+  "name": "Translate to Armenian",
+  "kind": {
+    "Fetch": {
+      "config": {
+        "readFields": ["data.translations.0.translatedText"],
+        "request": {
+          "headers": [
+            {
+              "value": "application/json",
+              "name": "Content-Type"
+            }
+          ],
+          "method": "POST",
+          "url": "https://translation.googleapis.com/language/translate/v2?key={gcp_key}",
+          "bodyString": "{\"q\":\"{selected_text}\",\"target\":\"hy\"}"
+        },
+        "template": "{0}",
+        "resultMode": "single"
+      }
+    }
+  },
+  "dynamicVariablePlaceholders": {
+    "{selected_text}": ""
+  }
+}

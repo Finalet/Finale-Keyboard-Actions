@@ -1,0 +1,22 @@
+{
+  "name": "finale-keyboard-actions",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Finalet/Finale-Keyboard-Actions.git"
+  },
+  "keywords": [],
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Finalet/Finale-Keyboard-Actions/issues"
+  },
+  "homepage": "https://github.com/Finalet/Finale-Keyboard-Actions#readme",
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "typescript": "^7.0.2"
+  }
+}
