@@ -45,7 +45,7 @@ function ValidateManifest(manifest: ActionManifest) {
 
   const releases = loadJsonIfExists<ActionReleases>(`${getPath(`marketplace/actions/${manifest.id}`)}/releases.json`);
   const highestReleaseVersion = releases?.releases.reduce((prev, curr) => (compareVersion(curr.version, prev.version) === "higher" ? curr : prev), { version: "0.0.0" })?.version ?? "0.0.0";
-  if (compareVersion(manifest.version, highestReleaseVersion) === "lower") {
+  if (compareVersion(manifest.version, highestReleaseVersion) !== "higher") {
     throw new Error(`New version "${manifest.version}" must be higher than the highest released version "${highestReleaseVersion}".`);
   }
 

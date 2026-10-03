@@ -6,7 +6,7 @@ import { writeFileSync } from "fs";
 function Run() {
   try {
     const actionId = getProcessArg(0);
-    if (!actionId) throw new Error("Missing action ID. Use: npm run validate <action-id>");
+    if (!actionId) throw new Error("Missing action ID. Use: npm run release <action-id>");
 
     console.log(`\nReleasing action "${actionId}"`);
 
@@ -46,7 +46,19 @@ function ReleaseAction(actionId: string) {
 }
 
 const getDynamicVariables = (from: string): string[] => {
-  return [...new Set(from.match(/\{[a-z][a-z0-9_]*\}/g) ?? [])];
+  const dynamicVariables = [
+    "{selected_text}",
+    "{previous_word}",
+    "{previous_2_words}",
+    "{previous_3_words}",
+    "{clipboard_text}",
+    "{keyboard_language}",
+    "{keyboard_language_code}",
+    "{keyboard_locale}",
+    "{device_timezone_name}",
+    "{device_timezone_utc}",
+  ];
+  return dynamicVariables.filter((variable) => from.includes(variable));
 };
 
 const getRequestDynamicVariables = (from: any): string[] => {
@@ -75,4 +87,6 @@ export interface ActionRelease {
   dynamicVariables: string[];
 }
 
-Run();
+if (require.main === module) {
+  Run();
+}

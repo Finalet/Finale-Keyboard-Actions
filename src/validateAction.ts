@@ -2,9 +2,8 @@ import { readdirSync } from "node:fs";
 import Ajv from "ajv/dist/2020";
 import fieldValidators from "./utils/fieldValidators";
 import directoryValidators from "./utils/directoryValidators";
-import { loadJsonFile, getPath, getProcessArg, compareVersion, loadJsonIfExists } from "./utils/misc";
+import { loadJsonFile, getPath, getProcessArg, compareVersion } from "./utils/misc";
 import { ActionManifest } from "./defineManifest";
-import { ActionReleases } from "./releaseAction";
 
 function Run() {
   console.log("\nStarting validation...");
@@ -66,7 +65,7 @@ export default function ValidateAction(actionId: string): void {
     fieldValidators.isValidVersion(fileVersion, `Version filename "${file.name}"`);
 
     if (compareVersion(fileVersion, manifest.version) === "higher") {
-      throw new Error(`Manifest version "${manifest.version}" cannot be lower than the highest version file "${fileVersion}".`);
+      throw new Error(`Version file ${file.name} cannot be higher than the manifest version "${manifest.version}".`);
     }
 
     const action = loadJsonFile(`${versionsFolder}/${file.name}`);
@@ -92,4 +91,6 @@ export const getActionManifestDefinition = (actionId: string): ActionManifest =>
   return manifest;
 };
 
-Run();
+if (require.main === module) {
+  Run();
+}
