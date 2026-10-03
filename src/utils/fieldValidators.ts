@@ -50,9 +50,7 @@ const isValidOrigin = (str: string, fieldName: string = "String") => {
 
   // Check href so even empty query (?) and fragment (#) components are rejected.
   if (url.username !== "" || url.password !== "" || url.pathname !== "/" || url.href.includes("?") || url.href.includes("#")) {
-    throw new Error(
-      `${fieldName} must be a valid HTTP or HTTPS origin with only a host and optional port, without credentials, paths, queries, or fragments.`,
-    );
+    throw new Error(`${fieldName} must be a valid HTTP or HTTPS origin with only a host and optional port, without credentials, paths, queries, or fragments.`);
   }
 };
 
@@ -80,7 +78,7 @@ const isContainedInArray = (value: unknown, arr: readonly unknown[], fieldName: 
   }
 };
 
-const validators = {
+const fieldValidators = {
   minMaxLength,
   noLeadingTrailingWhitespace,
   isLowercaseEnglishHyphenated,
@@ -94,4 +92,4 @@ const validators = {
   isContainedInArray,
 };
 
-export default validators;
+export default fieldValidators;
