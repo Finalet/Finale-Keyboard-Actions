@@ -1,6 +1,8 @@
+import { readdirSync } from "node:fs";
+import Ajv from "ajv/dist/2020";
 import fieldValidators from "./utils/fieldValidators";
 import directoryValidators from "./utils/directoryValidators";
-import { getFilePath, getProcessArg } from "./utils/misc";
+import { loadJsonFile, getPath, getProcessArg } from "./utils/misc";
 import { ActionManifest } from "./defineManifest";
 
 function Run() {
@@ -31,7 +33,7 @@ function ValidateAction(actionId: string): void {
 
   // Validate folder structure
 
-  const actionFolder = getFilePath(`marketplace/actions/${actionId}`);
+  const actionFolder = getPath(`marketplace/actions/${actionId}`);
   directoryValidators.exists(actionFolder);
 
   directoryValidators.allowedFilesAndDirectories(actionFolder, allowedFiles, allowedDirectories);
@@ -41,10 +43,36 @@ function ValidateAction(actionId: string): void {
 
   // Validate manifest
   const manifest = getActionManifestDefinition(actionId);
+
+  // Validate versions
+
+  const versionsFolder = `${actionFolder}/versions`;
+
+  directoryValidators.requiredFiles(versionsFolder, [`${manifest.version}.json`]);
+
+  const versionFiles = readdirSync(versionsFolder, { withFileTypes: true });
+
+  const schema = loadJsonFile(getPath("submission/action.schema.json"));
+  const ajv = new Ajv({ strict: true, allErrors: true });
+  const validate = ajv.compile(schema);
+
+  for (const file of versionFiles) {
+    if (!file.isFile() || !file.name.endsWith(".json")) {
+      throw new Error(`Unexpected entry in versions directory: "${file.name}". Only JSON files are allowed.`);
+    }
+
+    fieldValidators.isValidVersion(file.name.slice(0, -5), `Version filename "${file.name}"`);
+
+    const action = loadJsonFile(`${versionsFolder}/${file.name}`);
+
+    if (!validate(action)) {
+      throw new Error(`Version file "${file.name}" does not match the action schema: ${ajv.errorsText(validate.errors)}`);
+    }
+  }
 }
 
 export const getActionManifestDefinition = (actionId: string): ActionManifest => {
-  const actionFolder = getFilePath(`marketplace/actions/${actionId}`);
+  const actionFolder = getPath(`marketplace/actions/${actionId}`);
 
   const manifest: ActionManifest = require(`${actionFolder}/manifest.ts`).default;
 

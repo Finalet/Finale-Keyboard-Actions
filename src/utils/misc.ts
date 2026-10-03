@@ -1,3 +1,4 @@
+import { readFileSync } from "fs";
 import { resolve } from "node:path";
 
 export const getProcessArg = (index: number): string | undefined => {
@@ -6,6 +7,18 @@ export const getProcessArg = (index: number): string | undefined => {
   return args[index];
 };
 
-export const getFilePath = (relativePath: string): string => {
+export const getPath = (relativePath: string): string => {
   return resolve(process.cwd(), relativePath);
+};
+
+export const loadJsonFile = (path: string): any => {
+  const contents = readFileSync(path, "utf8");
+  let json: any;
+  try {
+    json = JSON.parse(contents);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`File "${path}" must contain valid JSON: ${message}`);
+  }
+  return json;
 };

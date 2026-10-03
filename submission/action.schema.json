@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Finale Keyboard Custom Action",
+  "description": "An importable custom action containing exactly one Fetch or Trigger configuration.",
+  "$comment": "Based on skills/create-finale-keyboard-action/SKILL.md. Additional semantic validation must check referenced dynamic tokens against placeholder entries, case-insensitive duplicate header names, and resolved request URLs and bodies.",
+  "type": "object",
+  "required": ["name", "kind"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "$ref": "#/$defs/name"
+    },
+    "kind": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "Fetch": {
+          "type": "object",
+          "required": ["config"],
+          "additionalProperties": false,
+          "properties": {
+            "config": {
+              "$ref": "#/$defs/fetchConfig"
+            }
+          }
+        },
+        "Trigger": {
+          "type": "object",
+          "required": ["config"],
+          "additionalProperties": false,
+          "properties": {
+            "config": {
+              "$ref": "#/$defs/triggerConfig"
+            }
+          }
+        }
+      }
+    },
+    "dynamicVariablePlaceholders": {
+      "description": "Test samples for dynamic tokens referenced in requests. Omit when unused; samples may be empty strings.",
+      "type": "object",
+      "propertyNames": {
+        "enum": [
+          "{selected_text}",
+          "{previous_word}",
+          "{previous_2_words}",
+          "{previous_3_words}",
+          "{clipboard_text}",
+          "{keyboard_language}",
+          "{keyboard_language_code}",
+          "{keyboard_locale}",
+          "{device_timezone_name}",
+          "{device_timezone_utc}"
+        ]
+      },
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  },
+  "$defs": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "request": {
+      "type": "object",
+      "required": ["method", "url"],
+      "additionalProperties": false,
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"]
+        },
+        "url": {
+          "description": "An absolute HTTPS URL with a host. Substitution tokens remain literal; validate the resolved URL separately.",
+          "type": "string",
+          "pattern": "^https://[^\\s/?#]+(?:[/?#][^\\s]*)?$"
+        },
+        "headers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/header"
+          }
+        },
+        "bodyString": {
+          "description": "The serialized UTF-8 request body. GET ignores this field.",
+          "type": "string"
+        }
+      }
+    },
+    "header": {
+      "type": "object",
+      "required": ["name", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "\\S"
+        },
+        "value": {
+          "type": "string",
+          "pattern": "\\S"
+        }
+      }
+    },
+    "fetchConfig": {
+      "type": "object",
+      "required": ["request", "readFields", "template", "resultMode"],
+      "additionalProperties": false,
+      "properties": {
+        "request": {
+          "$ref": "#/$defs/request"
+        },
+        "readFields": {
+          "description": "Ordered dot-separated paths with nonempty segments. Numeric segments index arrays; object keys are literal, not JSONPath expressions.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^[^.]+(?:\\.[^.]+)*$"
+          }
+        },
+        "template": {
+          "description": "Result text containing at least one numeric placeholder, such as {0}. Indices refer to the flattened extracted values.",
+          "type": "string",
+          "pattern": "\\{[0-9]+\\}"
+        },
+        "resultMode": {
+          "type": "string",
+          "enum": ["single", "multiple"]
+        }
+      }
+    },
+    "triggerConfig": {
+      "type": "object",
+      "required": ["options"],
+      "additionalProperties": false,
+      "properties": {
+        "options": {
+          "description": "Alternative menu options; only the selected option's request is sent.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["name", "request"],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "$ref": "#/$defs/name"
+              },
+              "request": {
+                "$ref": "#/$defs/request"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
