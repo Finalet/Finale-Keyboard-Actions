@@ -12,10 +12,10 @@ function Run() {
 
     ReleaseAction(actionId);
 
-    console.log(`🟢 Action "${actionId}" has been released.`);
+    console.log(`✅ Action "${actionId}" has been released.`);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error(`🔴 Failed: ${message}`);
+    console.error(`❌ Failed: ${message}`);
     process.exitCode = 1;
   }
 }
