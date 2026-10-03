@@ -1,4 +1,4 @@
-import { readFileSync, statSync } from "fs";
+import { Dirent, readdirSync, readFileSync, statSync } from "fs";
 import { resolve } from "node:path";
 import fieldValidators from "./fieldValidators";
 
@@ -55,4 +55,61 @@ export const compareVersion = (version: string, compareTo: string): "higher" | "
 
 export const JSONtoString = (json: any): string => {
   return JSON.stringify(json, null, 2);
+};
+
+export const ThrowError = {
+  fileError: (file: string, message: string) => {
+    throw new Error(`[${file}]: ${message}`);
+  },
+  IOError: (path: string, message: string) => {
+    throw new Error(`[${path}]: ${message}`);
+  },
+  actionError: (id: string, message: string) => {
+    throw new Error(`[${id}]: ${message}`);
+  },
+};
+
+export const IO = {
+  fileExists: (path: string): boolean => {
+    try {
+      return statSync(path).isFile();
+    } catch {
+      return false;
+    }
+  },
+  directoryExists: (path: string): boolean => {
+    try {
+      return statSync(path).isDirectory();
+    } catch {
+      return false;
+    }
+  },
+  loadDefaultExport: (path: string): any => {
+    if (!IO.fileExists(path)) {
+      ThrowError.IOError(path, `File does not exist.`);
+    }
+    return require(path).default;
+  },
+  loadJsonFile: (path: string): any => {
+    if (!IO.fileExists(path)) {
+      ThrowError.IOError(path, `File does not exist.`);
+    }
+
+    const contents = readFileSync(path, "utf8");
+    let json: any;
+    try {
+      json = JSON.parse(contents);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      ThrowError.IOError(path, `File must contain valid JSON: ${message}`);
+    }
+    return json;
+  },
+  loadEntriesFromDirectory: (path: string): Dirent[] => {
+    if (!IO.directoryExists(path)) {
+      ThrowError.IOError(path, `Directory does not exist.`);
+    }
+
+    return readdirSync(path, { withFileTypes: true });
+  },
 };
