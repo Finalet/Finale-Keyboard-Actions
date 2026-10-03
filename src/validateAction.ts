@@ -1,20 +1,20 @@
 import fieldValidators from "./utils/fieldValidators";
 import directoryValidators from "./utils/directoryValidators";
 import { getFilePath, getProcessArg } from "./utils/misc";
-
-Run();
+import { ActionManifest } from "./defineManifest";
 
 function Run() {
+  console.log("\nStarting validation...");
   try {
     const actionId = getProcessArg(0);
     if (!actionId) throw new Error("Missing action ID. Use: npm run validate <action-id>");
 
     ValidateAction(actionId);
 
-    console.log(`\n🟢 Action "${actionId}" is valid.`);
+    console.log(`🟢 Action "${actionId}" is valid.`);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error(`\n🔴 Failed: ${message}`);
+    console.error(`🔴 Failed: ${message}`);
     process.exitCode = 1;
   }
 }
@@ -40,8 +40,14 @@ function ValidateAction(actionId: string): void {
   directoryValidators.requiredDirectories(actionFolder, requiredDirectories);
 
   // Validate manifest
+  const manifest = getActionManifestDefinition(actionId);
+}
 
-  const manifest: unknown = require(`${actionFolder}/manifest.ts`).default;
+export const getActionManifestDefinition = (actionId: string): ActionManifest => {
+  const actionFolder = getFilePath(`marketplace/actions/${actionId}`);
+
+  const manifest: ActionManifest = require(`${actionFolder}/manifest.ts`).default;
+
   if (typeof manifest !== "object" || manifest === null || Array.isArray(manifest)) {
     throw new Error(`Manifest "manifest.ts" must default-export "defineManifest({..})".`);
   }
@@ -49,4 +55,7 @@ function ValidateAction(actionId: string): void {
   if (!("id" in manifest) || manifest.id !== actionId) {
     throw new Error(`Manifest ID must match action ID "${actionId}".`);
   }
-}
+  return manifest;
+};
+
+Run();
