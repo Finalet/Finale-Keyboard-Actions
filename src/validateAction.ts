@@ -14,10 +14,10 @@ function Run() {
 
     ValidateAction(actionId);
 
-    console.log(`🟢 Action "${actionId}" is valid.`);
+    console.log(`✅ Action "${actionId}" is valid.`);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error(`🔴 Failed: ${message}`);
+    console.error(`❌ Failed: ${message}`);
     process.exitCode = 1;
   }
 }
