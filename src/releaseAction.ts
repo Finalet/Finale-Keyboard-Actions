@@ -12,7 +12,7 @@ function Run() {
 
     ReleaseAction(actionId);
 
-    console.log(`✅ Action "${actionId}" has been released.`);
+    console.log(`✅ Action "${actionId}" ${getActionManifestDefinition(actionId).version} has been released.`);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`❌ Failed: ${message}`);
