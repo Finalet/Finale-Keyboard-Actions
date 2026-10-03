@@ -1,4 +1,4 @@
-import validators from "./validators";
+import fieldValidators from "@/src/utils/fieldValidators";
 
 export function defineManifest(manifest: ActionManifest) {
   ValidateManifest(manifest);
@@ -13,42 +13,42 @@ function ValidateManifest(manifest: ActionManifest) {
   const maxDescriptionLength = 1024;
 
   // Validate ID
-  validators.minMaxLength(manifest.id, minStringLength, maxNameLength, "ID");
-  validators.isLowercaseEnglishHyphenated(manifest.id, "ID");
+  fieldValidators.minMaxLength(manifest.id, minStringLength, maxNameLength, "ID");
+  fieldValidators.isLowercaseEnglishHyphenated(manifest.id, "ID");
 
   // Validate Name
-  validators.minMaxLength(manifest.name, minStringLength, maxNameLength, "Name");
+  fieldValidators.minMaxLength(manifest.name, minStringLength, maxNameLength, "Name");
 
   // Validate Description
-  validators.minMaxLength(manifest.description, minStringLength, maxDescriptionLength, "Description");
+  fieldValidators.minMaxLength(manifest.description, minStringLength, maxDescriptionLength, "Description");
 
   // Validate Author name
-  validators.minMaxLength(manifest.author.name, minStringLength, maxNameLength, "Author name");
+  fieldValidators.minMaxLength(manifest.author.name, minStringLength, maxNameLength, "Author name");
   if (manifest.author.url !== undefined) {
-    validators.isValidURL(manifest.author.url, "Author URL");
+    fieldValidators.isValidURL(manifest.author.url, "Author URL");
   }
 
   // Validate tags
-  validators.noDuplicatesInArray(manifest.tags, "Tags");
+  fieldValidators.noDuplicatesInArray(manifest.tags, "Tags");
   for (const tag of manifest.tags) {
-    validators.isContainedInArray(tag, availableTags, `${tag} tag`);
+    fieldValidators.isContainedInArray(tag, availableTags, `${tag} tag`);
   }
 
   // Validate status
-  validators.isContainedInArray(manifest.status, availableStatuses, "Status");
+  fieldValidators.isContainedInArray(manifest.status, availableStatuses, "Status");
 
   // Validate version
-  validators.minMaxLength(manifest.version, 5, 64, "Version");
-  validators.isValidVersion(manifest.version, "Version");
+  fieldValidators.minMaxLength(manifest.version, 5, 64, "Version");
+  fieldValidators.isValidVersion(manifest.version, "Version");
 
   // Validate services
   for (const service of manifest.services) {
-    validators.minMaxLength(service.name, minStringLength, maxNameLength, "Service name");
-    validators.minMaxLength(service.description, minStringLength, maxDescriptionLength, "Service description");
-    validators.noDuplicatesInArray(service.origins, "Service origins");
-    validators.noEmptyArray(service.origins, "Service origins");
+    fieldValidators.minMaxLength(service.name, minStringLength, maxNameLength, "Service name");
+    fieldValidators.minMaxLength(service.description, minStringLength, maxDescriptionLength, "Service description");
+    fieldValidators.noDuplicatesInArray(service.origins, "Service origins");
+    fieldValidators.noEmptyArray(service.origins, "Service origins");
     for (const origin of service.origins) {
-      validators.isValidOrigin(origin, `${service.name} origin`);
+      fieldValidators.isValidOrigin(origin, `${service.name} origin`);
     }
   }
 
@@ -56,20 +56,20 @@ function ValidateManifest(manifest: ActionManifest) {
   if (manifest.variables) {
     for (const [key, variable] of Object.entries(manifest.variables)) {
       // Validate variable key
-      validators.noLeadingTrailingWhitespace(key, `Variable key (${key})`);
-      validators.isWrappedInCurlyBraces(key, `Variable key (${key})`);
-      validators.isLowercaseEnglishUnderscored(key.slice(1, -1), `Variable key (${key})`);
+      fieldValidators.noLeadingTrailingWhitespace(key, `Variable key (${key})`);
+      fieldValidators.isWrappedInCurlyBraces(key, `Variable key (${key})`);
+      fieldValidators.isLowercaseEnglishUnderscored(key.slice(1, -1), `Variable key (${key})`);
 
       // Validate variable fields
-      validators.minMaxLength(variable.name, minStringLength, maxNameLength, `Variable name (${key})`);
-      validators.minMaxLength(variable.description, minStringLength, maxDescriptionLength, `Variable description (${key})`);
+      fieldValidators.minMaxLength(variable.name, minStringLength, maxNameLength, `Variable name (${key})`);
+      fieldValidators.minMaxLength(variable.description, minStringLength, maxDescriptionLength, `Variable description (${key})`);
     }
   }
 }
 
 function ValidateAllLeadingTrailingWhitespaces(value: unknown, path = "manifest"): void {
   if (typeof value === "string") {
-    validators.noLeadingTrailingWhitespace(value, path);
+    fieldValidators.noLeadingTrailingWhitespace(value, path);
   } else if (Array.isArray(value)) {
     value.forEach((item, index) => {
       ValidateAllLeadingTrailingWhitespaces(item, `${path}[${index}]`);

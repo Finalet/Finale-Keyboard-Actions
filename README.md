@@ -12,4 +12,4 @@ User flow to install actions:
 
 ### State
 
-This repo is populated with mock data.
+This repo is in active development and can be populated with mock data.

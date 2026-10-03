@@ -1,4 +1,4 @@
-import { ServiceDetails, VariableDetails } from "./manifest";
+import { ServiceDetails, VariableDetails } from "@/src/defineManifest";
 
 interface ActionReleases {
   id: string;
