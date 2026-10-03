@@ -2,8 +2,9 @@ import { readdirSync } from "node:fs";
 import Ajv from "ajv/dist/2020";
 import fieldValidators from "./utils/fieldValidators";
 import directoryValidators from "./utils/directoryValidators";
-import { loadJsonFile, getPath, getProcessArg } from "./utils/misc";
+import { loadJsonFile, getPath, getProcessArg, compareVersion, loadJsonIfExists } from "./utils/misc";
 import { ActionManifest } from "./defineManifest";
+import { ActionReleases } from "./releaseAction";
 
 function Run() {
   console.log("\nStarting validation...");
@@ -21,7 +22,7 @@ function Run() {
   }
 }
 
-function ValidateAction(actionId: string): void {
+export default function ValidateAction(actionId: string): void {
   const requiredFiles = ["manifest.ts"];
   const allowedFiles = [...requiredFiles, "manifest.json", "README.md", "releases.json"];
 
@@ -61,7 +62,12 @@ function ValidateAction(actionId: string): void {
       throw new Error(`Unexpected entry in versions directory: "${file.name}". Only JSON files are allowed.`);
     }
 
-    fieldValidators.isValidVersion(file.name.slice(0, -5), `Version filename "${file.name}"`);
+    let fileVersion = file.name.slice(0, -5);
+    fieldValidators.isValidVersion(fileVersion, `Version filename "${file.name}"`);
+
+    if (compareVersion(fileVersion, manifest.version) === "higher") {
+      throw new Error(`Manifest version "${manifest.version}" cannot be lower than the highest version file "${fileVersion}".`);
+    }
 
     const action = loadJsonFile(`${versionsFolder}/${file.name}`);
 

@@ -1,4 +1,6 @@
 import fieldValidators from "@/src/utils/fieldValidators";
+import { compareVersion, getPath, loadJsonIfExists } from "./utils/misc";
+import { ActionReleases } from "./releaseAction";
 
 export function defineManifest(manifest: ActionManifest) {
   ValidateManifest(manifest);
@@ -40,6 +42,12 @@ function ValidateManifest(manifest: ActionManifest) {
   // Validate version
   fieldValidators.minMaxLength(manifest.version, 5, 64, "Version");
   fieldValidators.isValidVersion(manifest.version, "Version");
+
+  const releases = loadJsonIfExists<ActionReleases>(`${getPath(`marketplace/actions/${manifest.id}`)}/releases.json`);
+  const highestReleaseVersion = releases?.releases.reduce((prev, curr) => (compareVersion(curr.version, prev.version) === "higher" ? curr : prev), { version: "0.0.0" })?.version ?? "0.0.0";
+  if (compareVersion(manifest.version, highestReleaseVersion) === "lower") {
+    throw new Error(`New version "${manifest.version}" must be higher than the highest released version "${highestReleaseVersion}".`);
+  }
 
   // Validate services
   for (const service of manifest.services) {
