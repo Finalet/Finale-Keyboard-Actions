@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Finale Keyboard Action Releases",
+  "description": "Release history generated from an action's manifest and version files.",
+  "$comment": "Additional semantic validation must check calendar dates, URL origins, unique release versions, newest-first ordering, and consistency with the action ID and version files.",
+  "type": "object",
+  "required": ["id", "releases"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 256,
+      "pattern": "^[a-z]+(?:-[a-z]+)*$"
+    },
+    "releases": {
+      "type": "array",
+      "description": "Release records ordered from newest to oldest.",
+      "items": {
+        "$ref": "#/$defs/release"
+      }
+    }
+  },
+  "$defs": {
+    "name": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 256,
+      "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 1024,
+      "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+    },
+    "release": {
+      "type": "object",
+      "required": ["version", "releaseDate", "services", "dynamicVariables"],
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 64,
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+        },
+        "releaseDate": {
+          "description": "UTC ISO 8601 timestamp, with optional milliseconds.",
+          "type": "string",
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]{3})?Z$"
+        },
+        "services": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/service"
+          }
+        },
+        "variables": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^\\{[a-z]+(?:_[a-z]+)*\\}$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/variable"
+          }
+        },
+        "dynamicVariables": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "{selected_text}",
+              "{previous_word}",
+              "{previous_2_words}",
+              "{previous_3_words}",
+              "{clipboard_text}",
+              "{keyboard_language}",
+              "{keyboard_language_code}",
+              "{keyboard_locale}",
+              "{device_timezone_name}",
+              "{device_timezone_utc}"
+            ]
+          }
+        }
+      }
+    },
+    "service": {
+      "type": "object",
+      "required": ["name", "description", "origins"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/name"
+        },
+        "description": {
+          "$ref": "#/$defs/description"
+        },
+        "origins": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "description": "HTTP or HTTPS origin containing only a host, optional port, and optional trailing slash.",
+            "type": "string",
+            "pattern": "^[hH][tT][tT][pP][sS]?://(?:\\[[0-9a-fA-F:.]+\\]|[^\\s/:?#@\\[\\]\\\\]+)(?::[0-9]+)?/?$"
+          }
+        }
+      }
+    },
+    "variable": {
+      "type": "object",
+      "required": ["name", "description"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/name"
+        },
+        "description": {
+          "$ref": "#/$defs/description"
+        }
+      }
+    }
+  }
+}

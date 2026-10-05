@@ -11,9 +11,10 @@ export default class Action {
   releases: Releases | null;
   versionFiles: Record<string, any>;
 
-  private actionValidator: {
-    validate: ValidateFunction<unknown>;
+  private jsonValidators: {
     ajv: Ajv;
+    action: ValidateFunction<unknown>;
+    releases: ValidateFunction<unknown>;
   };
 
   static availableStatuses = ["active", "deprecated"] as const;
@@ -28,11 +29,14 @@ export default class Action {
 
     this.verifyFileStructure();
 
-    const schema = IO.loadJsonFile(getPath("submission/action.schema.json"));
+    const actionSchema = IO.loadJsonFile(getPath("submission/action.schema.json"));
+    const releasesSchema = IO.loadJsonFile(getPath("submission/releases.schema.json"));
+
     const ajv = new Ajv({ strict: true, allErrors: true });
-    this.actionValidator = {
+    this.jsonValidators = {
       ajv,
-      validate: ajv.compile(schema),
+      action: ajv.compile(actionSchema),
+      releases: ajv.compile(releasesSchema),
     };
   }
 
@@ -88,8 +92,8 @@ export default class Action {
       }
 
       const action = IO.loadJsonFile(`${this.path}/versions/${version}.json`);
-      if (!this.actionValidator.validate(action)) {
-        ThrowError.actionError(this.id, `${version} version JSON failed validation: ${this.actionValidator.ajv.errorsText(this.actionValidator.validate.errors)}`);
+      if (!this.jsonValidators.action(action)) {
+        ThrowError.actionError(this.id, `${version} version JSON failed validation: ${this.jsonValidators.ajv.errorsText(this.jsonValidators.action.errors)}`);
       }
 
       const dynamicVariables = Action.getDynamicVariables(action);
@@ -102,6 +106,11 @@ export default class Action {
 
     if (!this.versionFiles[this.manifest.version]) {
       ThrowError.actionError(this.id, `Missing "${this.manifest.version}" version file.`);
+    }
+
+    const releasesJson = IO.loadJsonFileIfExists<Releases>(`${this.path}/releases.json`);
+    if (releasesJson && !this.jsonValidators.releases(releasesJson)) {
+      ThrowError.actionError(this.id, `releases.json failed validation: ${this.jsonValidators.ajv.errorsText(this.jsonValidators.releases.errors)}`);
     }
 
     console.log(`✅ Action "${this.id}" is valid.`);
