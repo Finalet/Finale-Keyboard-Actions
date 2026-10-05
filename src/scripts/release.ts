@@ -6,12 +6,9 @@ function Run() {
     const actionId = getProcessArg(0);
     if (!actionId) throw new Error("Missing action ID. Use: npm run release <action-id>");
 
-    console.log(`\nReleasing "${actionId}".`);
-
     const action = new Action(actionId);
-    // ValidateAction(actionId);
-
-    console.log(`✅ Action "${actionId}" was released.`);
+    action.validate();
+    action.release();
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`❌ Failed: ${message}`);

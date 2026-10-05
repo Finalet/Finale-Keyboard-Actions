@@ -1,4 +1,4 @@
-import { Dirent, readdirSync, readFileSync, statSync } from "fs";
+import { Dirent, readdirSync, readFileSync, statSync, writeFileSync } from "fs";
 import { resolve } from "node:path";
 import fieldValidators from "./fieldValidators";
 
@@ -93,5 +93,13 @@ export const IO = {
     }
 
     return readdirSync(path, { withFileTypes: true });
+  },
+  writeJsonFile: (path: string, data: any): void => {
+    try {
+      writeFileSync(path, JSON.stringify(data, null, 2), "utf8");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      ThrowError.IOError(path, `Failed to write JSON file: ${message}`);
+    }
   },
 };

@@ -78,6 +78,8 @@ export default class Action {
   }
 
   validate() {
+    console.log(`\n⏳ Validating "${this.id}".`);
+
     ValidateManifest(this.manifest);
 
     for (const version of Object.keys(this.versionFiles)) {
@@ -90,7 +92,65 @@ export default class Action {
         ThrowError.actionError(this.id, `${version} version JSON failed validation: ${this.actionValidator.ajv.errorsText(this.actionValidator.validate.errors)}`);
       }
     }
+
+    if (!this.versionFiles[this.manifest.version]) {
+      ThrowError.actionError(this.id, `Missing "${this.manifest.version}" version file.`);
+    }
+
+    console.log(`✅ Action "${this.id}" is valid.`);
   }
+
+  release() {
+    console.log(`\n⏳ Releasing "${this.id}".`);
+
+    const versionToRelease = this.manifest.version;
+    const actionJSON = this.versionFiles[versionToRelease];
+
+    const newRelease: Release = {
+      version: this.manifest.version,
+      releaseDate: new Date().toDateString(),
+      services: this.manifest.services,
+      variables: this.manifest.variables,
+      dynamicVariables: Action.getDynamicVariables(actionJSON),
+    };
+
+    const releases = this.releases ?? { id: this.id, releases: [] };
+    releases.releases.unshift(newRelease);
+
+    IO.writeJsonFile(`${this.path}/manifest.json`, this.manifest);
+    IO.writeJsonFile(`${this.path}/releases.json`, releases);
+
+    console.log(`✅ Action "${this.id}" was released.`);
+  }
+
+  private static getDynamicVariables = (from: any): string[] => {
+    const extractVariables = (from: string): string[] => {
+      const dynamicVariables = [
+        "{selected_text}",
+        "{previous_word}",
+        "{previous_2_words}",
+        "{previous_3_words}",
+        "{clipboard_text}",
+        "{keyboard_language}",
+        "{keyboard_language_code}",
+        "{keyboard_locale}",
+        "{device_timezone_name}",
+        "{device_timezone_utc}",
+      ];
+      return dynamicVariables.filter((variable) => from.includes(variable));
+    };
+
+    if (from === null || typeof from !== "object") return [];
+
+    const variables = Object.entries(from).flatMap(([key, value]) => {
+      if (key === "request" && value !== null && typeof value === "object") {
+        return extractVariables(JSON.stringify(value));
+      }
+      return Action.getDynamicVariables(value);
+    });
+
+    return [...new Set(variables)];
+  };
 }
 
 export interface Manifest {
