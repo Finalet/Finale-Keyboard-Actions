@@ -91,6 +91,13 @@ export default class Action {
       if (!this.actionValidator.validate(action)) {
         ThrowError.actionError(this.id, `${version} version JSON failed validation: ${this.actionValidator.ajv.errorsText(this.actionValidator.validate.errors)}`);
       }
+
+      const dynamicVariables = Action.getDynamicVariables(action);
+      for (const variable of dynamicVariables) {
+        if (action.dynamicVariablePlaceholders[variable] === undefined) {
+          ThrowError.actionError(this.id, `Missing dynamic variable placeholder for "${variable}" in version "${version}".`);
+        }
+      }
     }
 
     if (!this.versionFiles[this.manifest.version]) {
