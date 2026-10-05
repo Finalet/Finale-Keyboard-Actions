@@ -11,11 +11,7 @@ export default class Action {
   releases: Releases | null;
   versionFiles: Record<string, any>;
 
-  private jsonValidators: {
-    ajv: Ajv;
-    action: ValidateFunction<unknown>;
-    releases: ValidateFunction<unknown>;
-  };
+  private jsonValidator: ActionJSONValidator;
 
   static availableStatuses = ["active", "deprecated"] as const;
   static availableTags = ["Requires authentication", "Paid", "Free"] as const;
@@ -23,21 +19,12 @@ export default class Action {
   constructor(id: string) {
     this.path = getPath(`marketplace/actions/${id}`);
     this.id = id;
+    this.jsonValidator = new ActionJSONValidator(id);
     this.manifest = this.loadManifest();
     this.releases = this.loadReleases();
     this.versionFiles = this.loadVersionFiles();
 
     this.verifyFileStructure();
-
-    const actionSchema = IO.loadJsonFile(getPath("submission/action.schema.json"));
-    const releasesSchema = IO.loadJsonFile(getPath("submission/releases.schema.json"));
-
-    const ajv = new Ajv({ strict: true, allErrors: true });
-    this.jsonValidators = {
-      ajv,
-      action: ajv.compile(actionSchema),
-      releases: ajv.compile(releasesSchema),
-    };
   }
 
   private loadManifest(): Manifest {
@@ -86,15 +73,18 @@ export default class Action {
 
     ValidateManifest(this.manifest);
 
+    const releasesJson = IO.loadJsonFileIfExists<Releases>(`${this.path}/releases.json`);
+    if (releasesJson !== null) {
+      this.jsonValidator.ValidateReleasesJSON(releasesJson);
+    }
+
     for (const version of Object.keys(this.versionFiles)) {
       if (compareVersion(version, this.manifest.version) === "higher") {
         ThrowError.actionError(this.id, `Action can't contain a version file that is higher (${version}) than the manifest (${this.manifest.version}).`);
       }
 
       const action = IO.loadJsonFile(`${this.path}/versions/${version}.json`);
-      if (!this.jsonValidators.action(action)) {
-        ThrowError.actionError(this.id, `${version} version JSON failed validation: ${this.jsonValidators.ajv.errorsText(this.jsonValidators.action.errors)}`);
-      }
+      this.jsonValidator.ValidateActionJSON(action, version);
 
       const dynamicVariables = Action.getDynamicVariables(action);
       for (const variable of dynamicVariables) {
@@ -106,11 +96,6 @@ export default class Action {
 
     if (!this.versionFiles[this.manifest.version]) {
       ThrowError.actionError(this.id, `Missing "${this.manifest.version}" version file.`);
-    }
-
-    const releasesJson = IO.loadJsonFileIfExists<Releases>(`${this.path}/releases.json`);
-    if (releasesJson && !this.jsonValidators.releases(releasesJson)) {
-      ThrowError.actionError(this.id, `releases.json failed validation: ${this.jsonValidators.ajv.errorsText(this.jsonValidators.releases.errors)}`);
     }
 
     console.log(`✅ Action "${this.id}" is valid.`);
@@ -167,6 +152,32 @@ export default class Action {
 
     return [...new Set(variables)];
   };
+}
+
+class ActionJSONValidator {
+  private static ajv = new Ajv({ strict: true, allErrors: true });
+  private static actionValidator = ActionJSONValidator.ajv.compile(IO.loadJsonFile(getPath("submission/action.schema.json")));
+  private static releasesValidator = ActionJSONValidator.ajv.compile(IO.loadJsonFile(getPath("submission/releases.schema.json")));
+
+  private readonly id: string;
+
+  constructor(id: string) {
+    this.id = id;
+  }
+
+  ValidateActionJSON(action: unknown, version: string): void {
+    this.ValidateJSON(ActionJSONValidator.actionValidator, action, `${version} version JSON`);
+  }
+
+  ValidateReleasesJSON(releases: unknown): void {
+    this.ValidateJSON(ActionJSONValidator.releasesValidator, releases, "releases.json");
+  }
+
+  private ValidateJSON(validator: ValidateFunction<unknown>, data: unknown, context: string): void {
+    if (!validator(data)) {
+      ThrowError.actionError(this.id, `${context} failed validation: ${ActionJSONValidator.ajv.errorsText(validator.errors)}`);
+    }
+  }
 }
 
 export interface Manifest {
