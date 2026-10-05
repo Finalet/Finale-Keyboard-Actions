@@ -1,13 +1,12 @@
 import fieldValidators from "@/src/utils/fieldValidators";
-import { compareVersion, getPath, loadJsonIfExists } from "./utils/misc";
-import { ActionReleases } from "./releaseAction";
+import { compareVersion, getPath, IO } from "../utils/misc";
+import Action, { Manifest, Releases } from "./Action";
 
-export function defineManifest(manifest: ActionManifest) {
-  ValidateManifest(manifest);
+export function defineManifest(manifest: Manifest) {
   return manifest;
 }
 
-function ValidateManifest(manifest: ActionManifest) {
+export function ValidateManifest(manifest: Manifest) {
   ValidateAllLeadingTrailingWhitespaces(manifest);
 
   const minStringLength = 3;
@@ -33,17 +32,17 @@ function ValidateManifest(manifest: ActionManifest) {
   // Validate tags
   fieldValidators.noDuplicatesInArray(manifest.tags, "Tags");
   for (const tag of manifest.tags) {
-    fieldValidators.isContainedInArray(tag, availableTags, `${tag} tag`);
+    fieldValidators.isContainedInArray(tag, Action.availableTags, `${tag} tag`);
   }
 
   // Validate status
-  fieldValidators.isContainedInArray(manifest.status, availableStatuses, "Status");
+  fieldValidators.isContainedInArray(manifest.status, Action.availableStatuses, "Status");
 
   // Validate version
   fieldValidators.minMaxLength(manifest.version, 5, 64, "Version");
   fieldValidators.isValidVersion(manifest.version, "Version");
 
-  const releases = loadJsonIfExists<ActionReleases>(`${getPath(`marketplace/actions/${manifest.id}`)}/releases.json`);
+  const releases = IO.loadJsonFileIfExists<Releases>(`${getPath(`marketplace/actions/${manifest.id}`)}/releases.json`);
   const highestReleaseVersion = releases?.releases.reduce((prev, curr) => (compareVersion(curr.version, prev.version) === "higher" ? curr : prev), { version: "0.0.0" })?.version ?? "0.0.0";
   if (compareVersion(manifest.version, highestReleaseVersion) !== "higher") {
     throw new Error(`New version "${manifest.version}" must be higher than the highest released version "${highestReleaseVersion}".`);
@@ -88,35 +87,3 @@ function ValidateAllLeadingTrailingWhitespaces(value: unknown, path = "manifest"
     }
   }
 }
-
-export interface ActionManifest {
-  id: string;
-  name: string;
-  description: string;
-  author: {
-    name: string;
-    url?: string;
-  };
-  tags: ActionTag[];
-  version: string;
-  status: ActionStatus;
-  services: ServiceDetails[];
-  variables?: Record<string, VariableDetails>;
-}
-
-export interface VariableDetails {
-  name: string;
-  description: string;
-}
-
-export interface ServiceDetails {
-  name: string;
-  description: string;
-  origins: string[];
-}
-
-const availableStatuses = ["active", "deprecated"] as const;
-export type ActionStatus = (typeof availableStatuses)[number];
-
-const availableTags = ["Requires authentication", "Paid", "Free"] as const;
-export type ActionTag = (typeof availableTags)[number];

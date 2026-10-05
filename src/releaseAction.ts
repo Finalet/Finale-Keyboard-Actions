@@ -1,7 +1,7 @@
-import { ServiceDetails, VariableDetails } from "@/src/defineManifest";
 import ValidateAction, { getActionManifestDefinition } from "./validateAction";
-import { getPath, getProcessArg, JSONtoString, loadJsonFile, loadJsonIfExists } from "./utils/misc";
+import { getPath, getProcessArg, IO, JSONtoString } from "./utils/misc";
 import { writeFileSync } from "fs";
+import { Release, Releases } from "./action/Action";
 
 function Run() {
   try {
@@ -25,9 +25,9 @@ function ReleaseAction(actionId: string) {
 
   const manifest = getActionManifestDefinition(actionId);
   const actionFolder = getPath(`marketplace/actions/${actionId}`);
-  const actionJson = loadJsonFile(`${actionFolder}/versions/${manifest.version}.json`);
+  const actionJson = IO.loadJsonFile(`${actionFolder}/versions/${manifest.version}.json`);
 
-  const newRelease: ActionRelease = {
+  const newRelease: Release = {
     version: manifest.version,
     releaseDate: new Date().toISOString(),
     services: manifest.services,
@@ -37,7 +37,7 @@ function ReleaseAction(actionId: string) {
 
   const releasesFilePath = `${actionFolder}/releases.json`;
 
-  let releases: ActionReleases = loadJsonIfExists<ActionReleases>(releasesFilePath) ?? { id: actionId, releases: [] };
+  let releases: Releases = IO.loadJsonFileIfExists<Releases>(releasesFilePath) ?? { id: actionId, releases: [] };
 
   releases.releases.push(newRelease);
 
@@ -73,19 +73,6 @@ const getRequestDynamicVariables = (from: any): string[] => {
 
   return [...new Set(variables)];
 };
-
-export interface ActionReleases {
-  id: string;
-  releases: ActionRelease[];
-}
-
-export interface ActionRelease {
-  version: string;
-  releaseDate: string;
-  services: ServiceDetails[];
-  variables?: Record<string, VariableDetails>;
-  dynamicVariables: string[];
-}
 
 if (require.main === module) {
   Run();

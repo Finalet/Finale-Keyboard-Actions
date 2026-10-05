@@ -12,31 +12,6 @@ export const getPath = (relativePath: string): string => {
   return resolve(process.cwd(), relativePath);
 };
 
-export const doesFileExist = (path: string): boolean => {
-  try {
-    return statSync(path).isFile();
-  } catch {
-    return false;
-  }
-};
-
-export const loadJsonFile = <T = any>(path: string): T => {
-  const contents = readFileSync(path, "utf8");
-  let json: any;
-  try {
-    json = JSON.parse(contents);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`File "${path}" must contain valid JSON: ${message}`);
-  }
-  return json;
-};
-
-export const loadJsonIfExists = <T = any>(path: string): T | undefined => {
-  if (!doesFileExist(path)) return undefined;
-  return loadJsonFile<T>(path);
-};
-
 export const compareVersion = (version: string, compareTo: string): "higher" | "lower" | "same" => {
   fieldValidators.isValidVersion(version, "version");
   fieldValidators.isValidVersion(compareTo, "compareTo");
@@ -77,6 +52,9 @@ export const IO = {
       return false;
     }
   },
+  isEntryJsonFile: (entry: Dirent): boolean => {
+    return entry.isFile() && entry.name.slice(-5) === ".json";
+  },
   directoryExists: (path: string): boolean => {
     try {
       return statSync(path).isDirectory();
@@ -104,6 +82,10 @@ export const IO = {
       ThrowError.IOError(path, `File must contain valid JSON: ${message}`);
     }
     return json;
+  },
+  loadJsonFileIfExists: <T>(path: string): T | null => {
+    if (!IO.fileExists(path)) return null;
+    return IO.loadJsonFile(path) as T;
   },
   loadEntriesFromDirectory: (path: string): Dirent[] => {
     if (!IO.directoryExists(path)) {

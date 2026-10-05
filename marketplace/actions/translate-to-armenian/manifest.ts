@@ -1,4 +1,4 @@
-import { defineManifest } from "@/src/defineManifest";
+import { defineManifest } from "@/src/action/manifest";
 
 export default defineManifest({
   id: "translate-to-armenian",

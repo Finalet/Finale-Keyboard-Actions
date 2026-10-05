@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "validate": "tsx src/validateAction.ts",
-    "release": "tsx src/releaseAction.ts"
+    "validate": "tsx src/scripts/validate.ts",
+    "release": "tsx src/scripts/release.ts"
   },
   "repository": {
     "type": "git",
