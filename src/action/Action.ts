@@ -115,7 +115,7 @@ export default class Action {
 
     const newRelease: Release = {
       version: this.manifest.version,
-      releaseDate: new Date().toDateString(),
+      releaseDate: new Date().toISOString(),
       services: this.manifest.services,
       variables: this.manifest.variables,
       dynamicVariables: Action.getDynamicVariables(actionJSON),
