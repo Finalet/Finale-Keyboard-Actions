@@ -17,6 +17,19 @@ export default class Action {
   static availableStatuses = ["active", "deprecated"] as const;
   static availableTags = ["Requires authentication", "Paid", "Free"] as const;
 
+  static dynamicVariables = [
+    "{selected_text}",
+    "{previous_word}",
+    "{previous_2_words}",
+    "{previous_3_words}",
+    "{clipboard_text}",
+    "{keyboard_language}",
+    "{keyboard_language_code}",
+    "{keyboard_locale}",
+    "{device_timezone_name}",
+    "{device_timezone_utc}",
+  ];
+
   constructor(id: string) {
     this.path = getPath(`marketplace/actions/${id}`);
     this.id = id;
@@ -126,19 +139,7 @@ export default class Action {
 
   private static getDynamicVariables = (from: any): string[] => {
     const extractVariables = (from: string): string[] => {
-      const dynamicVariables = [
-        "{selected_text}",
-        "{previous_word}",
-        "{previous_2_words}",
-        "{previous_3_words}",
-        "{clipboard_text}",
-        "{keyboard_language}",
-        "{keyboard_language_code}",
-        "{keyboard_locale}",
-        "{device_timezone_name}",
-        "{device_timezone_utc}",
-      ];
-      return dynamicVariables.filter((variable) => from.includes(variable));
+      return Action.dynamicVariables.filter((variable) => from.includes(variable));
     };
 
     if (from === null || typeof from !== "object") return [];
