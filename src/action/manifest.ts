@@ -1,6 +1,6 @@
 import fieldValidators from "@/src/utils/fieldValidators";
-import { compareVersion, getPath, IO } from "../utils/misc";
-import Action, { Manifest, Releases } from "./Action";
+import { availableStatuses, availableTags, dynamicVariables } from "./types";
+import type { Manifest } from "./types";
 
 export function defineManifest(manifest: Manifest) {
   return manifest;
@@ -32,21 +32,15 @@ export function ValidateManifest(manifest: Manifest) {
   // Validate tags
   fieldValidators.noDuplicatesInArray(manifest.tags, "Tags");
   for (const tag of manifest.tags) {
-    fieldValidators.isContainedInArray(tag, Action.availableTags, `${tag} tag`);
+    fieldValidators.isContainedInArray(tag, availableTags, `${tag} tag`);
   }
 
   // Validate status
-  fieldValidators.isContainedInArray(manifest.status, Action.availableStatuses, "Status");
+  fieldValidators.isContainedInArray(manifest.status, availableStatuses, "Status");
 
   // Validate version
   fieldValidators.minMaxLength(manifest.version, 5, 64, "Version");
   fieldValidators.isValidVersion(manifest.version, "Version");
-
-  const releases = IO.loadJsonFileIfExists<Releases>(`${getPath(`marketplace/actions/${manifest.id}`)}/releases.json`);
-  const highestReleaseVersion = releases?.releases.reduce((prev, curr) => (compareVersion(curr.version, prev.version) === "higher" ? curr : prev), { version: "0.0.0" })?.version ?? "0.0.0";
-  if (compareVersion(manifest.version, highestReleaseVersion) === "lower") {
-    throw new Error(`New version "${manifest.version}" cannot be lower than the highest released version "${highestReleaseVersion}".`);
-  }
 
   // Validate services
   for (const service of manifest.services) {
@@ -72,9 +66,9 @@ export function ValidateManifest(manifest: Manifest) {
       fieldValidators.minMaxLength(variable.description, minStringLength, maxDescriptionLength, `Variable description (${key})`);
     }
   }
+}
 
-  // Validate action requests
-  const action = IO.loadJsonFile(getPath(`marketplace/actions/${manifest.id}/versions/${manifest.version}.json`));
+export function ValidateActionAgainstManifest(action: unknown, manifest: Manifest) {
   const origins = new Set(manifest.services.flatMap((service) => service.origins.map((origin) => new URL(origin).origin)));
   const usedVariables = new Set<string>();
   ValidateActionRequests(action, manifest, origins, usedVariables);
@@ -102,14 +96,14 @@ function ValidateActionRequests(value: unknown, manifest: Manifest, origins: Set
           if (getVariables(hostAndPort).length === 0) {
             const origin = fieldValidators.isValidURL(child.url, `${context} URL`).origin;
             if (!origins.has(origin)) {
-              throw new Error(`${context} origin "${origin}" must be included in a manifest service.`);
+              throw new Error(`${context} origin "${origin}" is missing from the manifest services.`);
             }
           }
         }
 
         for (const variable of new Set(getVariables(child))) {
           usedVariables.add(variable);
-          if (!Action.dynamicVariables.includes(variable) && !Object.hasOwn(manifest.variables ?? {}, variable)) {
+          if (!dynamicVariables.includes(variable) && !Object.hasOwn(manifest.variables ?? {}, variable)) {
             throw new Error(`${context} variable "${variable}" is missing a manifest variable entry.`);
           }
         }

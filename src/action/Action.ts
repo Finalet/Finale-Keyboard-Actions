@@ -1,7 +1,9 @@
 import directoryValidators from "../utils/directoryValidators";
 import JSONValidator from "../utils/JSONValidator";
 import { compareVersion, getPath, IO, ThrowError } from "../utils/misc";
-import { ValidateManifest } from "./manifest";
+import { ValidateActionAgainstManifest, ValidateManifest } from "./manifest";
+import { dynamicVariables } from "./types";
+import type { Manifest, Release, Releases } from "./types";
 
 export default class Action {
   path: string;
@@ -11,24 +13,8 @@ export default class Action {
   releases: Releases | null;
   versionFiles: Record<string, any>;
 
-  private static actionValidator = new JSONValidator(getPath("submission/action.schema.json"));
-  private static releasesValidator = new JSONValidator(getPath("submission/releases.schema.json"));
-
-  static availableStatuses = ["active", "deprecated"] as const;
-  static availableTags = ["Requires authentication", "Paid", "Free"] as const;
-
-  static dynamicVariables = [
-    "{selected_text}",
-    "{previous_word}",
-    "{previous_2_words}",
-    "{previous_3_words}",
-    "{clipboard_text}",
-    "{keyboard_language}",
-    "{keyboard_language_code}",
-    "{keyboard_locale}",
-    "{device_timezone_name}",
-    "{device_timezone_utc}",
-  ];
+  private static actionJSONValidator = new JSONValidator(getPath("submission/action.schema.json"));
+  private static releasesJSONValidator = new JSONValidator(getPath("submission/releases.schema.json"));
 
   constructor(id: string) {
     this.path = getPath(`marketplace/actions/${id}`);
@@ -86,18 +72,20 @@ export default class Action {
 
     ValidateManifest(this.manifest);
 
-    const releasesJson = IO.loadJsonFileIfExists<Releases>(`${this.path}/releases.json`);
-    if (releasesJson !== null) {
-      Action.releasesValidator.Validate(releasesJson, `[${this.id}]: releases.json`);
+    if (this.releases !== null) {
+      Action.releasesJSONValidator.Validate(this.releases, `[${this.id}]: releases.json`);
     }
 
-    for (const version of Object.keys(this.versionFiles)) {
+    if (!Object.hasOwn(this.versionFiles, this.manifest.version)) {
+      ThrowError.actionError(this.id, `Missing "${this.manifest.version}" version file.`);
+    }
+
+    for (const [version, action] of Object.entries(this.versionFiles)) {
+      Action.actionJSONValidator.Validate(action, `[${this.id}]: ${version} version JSON`);
+
       if (compareVersion(version, this.manifest.version) === "higher") {
         ThrowError.actionError(this.id, `Action can't contain a version file that is higher (${version}) than the manifest (${this.manifest.version}).`);
       }
-
-      const action = IO.loadJsonFile(`${this.path}/versions/${version}.json`);
-      Action.actionValidator.Validate(action, `[${this.id}]: ${version} version JSON`);
 
       const dynamicVariables = Action.getDynamicVariables(action);
       for (const variable of dynamicVariables) {
@@ -107,9 +95,12 @@ export default class Action {
       }
     }
 
-    if (!this.versionFiles[this.manifest.version]) {
-      ThrowError.actionError(this.id, `Missing "${this.manifest.version}" version file.`);
+    const highestReleaseVersion = this.releases?.releases.reduce((prev, curr) => (compareVersion(curr.version, prev.version) === "higher" ? curr : prev), { version: "0.0.0" })?.version ?? "0.0.0";
+    if (compareVersion(this.manifest.version, highestReleaseVersion) === "lower") {
+      ThrowError.actionError(this.id, `New version "${this.manifest.version}" cannot be lower than the highest released version "${highestReleaseVersion}".`);
     }
+
+    ValidateActionAgainstManifest(this.versionFiles[this.manifest.version], this.manifest);
 
     console.log(`✅ Action "${this.id}" is valid.`);
   }
@@ -139,7 +130,7 @@ export default class Action {
 
   private static getDynamicVariables = (from: any): string[] => {
     const extractVariables = (from: string): string[] => {
-      return Action.dynamicVariables.filter((variable) => from.includes(variable));
+      return dynamicVariables.filter((variable) => from.includes(variable));
     };
 
     if (from === null || typeof from !== "object") return [];
@@ -154,45 +145,3 @@ export default class Action {
     return [...new Set(variables)];
   };
 }
-
-export interface Manifest {
-  id: string;
-  name: string;
-  description: string;
-  author: {
-    name: string;
-    url?: string;
-  };
-  tags: ActionTag[];
-  version: string;
-  status: ActionStatus;
-  services: ServiceDetails[];
-  variables?: Record<string, VariableDetails>;
-}
-
-export interface VariableDetails {
-  name: string;
-  description: string;
-}
-
-export interface ServiceDetails {
-  name: string;
-  description: string;
-  origins: string[];
-}
-
-export interface Releases {
-  id: string;
-  releases: Release[];
-}
-
-export interface Release {
-  version: string;
-  releaseDate: string;
-  services: ServiceDetails[];
-  variables?: Record<string, VariableDetails>;
-  dynamicVariables: string[];
-}
-
-export type ActionStatus = (typeof Action.availableStatuses)[number];
-export type ActionTag = (typeof Action.availableTags)[number];

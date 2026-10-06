@@ -1,4 +1,5 @@
-import Action, { ActionTag } from "./action/Action";
+import Action from "./action/Action";
+import type { ActionTag } from "./action/types";
 import JSONValidator from "./utils/JSONValidator";
 import { getPath, IO } from "./utils/misc";
 
