@@ -67,7 +67,7 @@ export default class Action {
     directoryValidators.allowedFilesAndDirectories(this.path, allowedFiles, allowedDirectories);
   }
 
-  validate() {
+  Validate() {
     console.log(`\n⏳ Validating "${this.id}".`);
 
     ValidateManifest(this.manifest);
@@ -105,7 +105,7 @@ export default class Action {
     console.log(`✅ Action "${this.id}" is valid.`);
   }
 
-  release() {
+  Release() {
     console.log(`\n⏳ Releasing "${this.id}".`);
 
     const versionToRelease = this.manifest.version;

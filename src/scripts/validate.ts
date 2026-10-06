@@ -7,7 +7,7 @@ function Run() {
     if (!actionId) throw new Error("Missing action ID. Use: npm run validate <action-id>");
 
     const action = new Action(actionId);
-    action.validate();
+    action.Validate();
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`❌ Failed: ${message}`);

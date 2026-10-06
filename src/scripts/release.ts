@@ -8,8 +8,8 @@ function Run() {
     if (!actionId) throw new Error("Missing action ID. Use: npm run release <action-id>");
 
     const action = new Action(actionId);
-    action.validate();
-    action.release();
+    action.Validate();
+    action.Release();
 
     GenerateIndex();
   } catch (error) {
