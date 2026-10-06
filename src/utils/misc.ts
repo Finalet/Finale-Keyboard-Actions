@@ -28,10 +28,6 @@ export const compareVersion = (version: string, compareTo: string): "higher" | "
   return "same";
 };
 
-export const JSONtoString = (json: any): string => {
-  return JSON.stringify(json, null, 2);
-};
-
 export const ThrowError = {
   fileError: (file: string, message: string) => {
     throw new Error(`[${file}]: ${message}`);

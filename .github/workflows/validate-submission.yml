@@ -1,0 +1,40 @@
+name: Validate submission
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-submission:
+    name: Validate marketplace submission
+    if: startsWith(github.event.pull_request.title, '[SUBMISSION]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Check out trusted validation code
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch proposed submission
+        run: git fetch --no-tags origin "$HEAD_SHA"
+
+      - name: Check submission changes and validate action
+        run: node --import tsx src/scripts/validate-submission.ts "$BASE_SHA" "$HEAD_SHA"
