@@ -1,5 +1,5 @@
-import Ajv, { ValidateFunction } from "ajv/dist/2020";
 import directoryValidators from "../utils/directoryValidators";
+import JSONValidator from "../utils/JSONValidator";
 import { compareVersion, getPath, IO, ThrowError } from "../utils/misc";
 import { ValidateManifest } from "./manifest";
 
@@ -11,7 +11,8 @@ export default class Action {
   releases: Releases | null;
   versionFiles: Record<string, any>;
 
-  private jsonValidator: ActionJSONValidator;
+  private static actionValidator = new JSONValidator(getPath("submission/action.schema.json"));
+  private static releasesValidator = new JSONValidator(getPath("submission/releases.schema.json"));
 
   static availableStatuses = ["active", "deprecated"] as const;
   static availableTags = ["Requires authentication", "Paid", "Free"] as const;
@@ -19,7 +20,6 @@ export default class Action {
   constructor(id: string) {
     this.path = getPath(`marketplace/actions/${id}`);
     this.id = id;
-    this.jsonValidator = new ActionJSONValidator(id);
     this.manifest = this.loadManifest();
     this.releases = this.loadReleases();
     this.versionFiles = this.loadVersionFiles();
@@ -75,7 +75,7 @@ export default class Action {
 
     const releasesJson = IO.loadJsonFileIfExists<Releases>(`${this.path}/releases.json`);
     if (releasesJson !== null) {
-      this.jsonValidator.ValidateReleasesJSON(releasesJson);
+      Action.releasesValidator.Validate(releasesJson, `[${this.id}]: releases.json`);
     }
 
     for (const version of Object.keys(this.versionFiles)) {
@@ -84,7 +84,7 @@ export default class Action {
       }
 
       const action = IO.loadJsonFile(`${this.path}/versions/${version}.json`);
-      this.jsonValidator.ValidateActionJSON(action, version);
+      Action.actionValidator.Validate(action, `[${this.id}]: ${version} version JSON`);
 
       const dynamicVariables = Action.getDynamicVariables(action);
       for (const variable of dynamicVariables) {
@@ -152,32 +152,6 @@ export default class Action {
 
     return [...new Set(variables)];
   };
-}
-
-class ActionJSONValidator {
-  private static ajv = new Ajv({ strict: true, allErrors: true });
-  private static actionValidator = ActionJSONValidator.ajv.compile(IO.loadJsonFile(getPath("submission/action.schema.json")));
-  private static releasesValidator = ActionJSONValidator.ajv.compile(IO.loadJsonFile(getPath("submission/releases.schema.json")));
-
-  private readonly id: string;
-
-  constructor(id: string) {
-    this.id = id;
-  }
-
-  ValidateActionJSON(action: unknown, version: string): void {
-    this.ValidateJSON(ActionJSONValidator.actionValidator, action, `${version} version JSON`);
-  }
-
-  ValidateReleasesJSON(releases: unknown): void {
-    this.ValidateJSON(ActionJSONValidator.releasesValidator, releases, "releases.json");
-  }
-
-  private ValidateJSON(validator: ValidateFunction<unknown>, data: unknown, context: string): void {
-    if (!validator(data)) {
-      ThrowError.actionError(this.id, `${context} failed validation: ${ActionJSONValidator.ajv.errorsText(validator.errors)}`);
-    }
-  }
 }
 
 export interface Manifest {

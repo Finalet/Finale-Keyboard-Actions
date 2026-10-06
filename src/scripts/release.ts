@@ -1,3 +1,4 @@
+import { GenerateIndex } from "../marketplace-index";
 import Action from "../action/Action";
 import { getProcessArg } from "../utils/misc";
 
@@ -9,6 +10,8 @@ function Run() {
     const action = new Action(actionId);
     action.validate();
     action.release();
+
+    GenerateIndex();
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`❌ Failed: ${message}`);

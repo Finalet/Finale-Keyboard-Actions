@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Finale Keyboard Marketplace Index",
+  "description": "Marketplace action metadata generated from action manifests.",
+  "$comment": "Additional semantic validation must check calendar dates and unique action IDs.",
+  "type": "object",
+  "required": ["actions", "updatedAt"],
+  "additionalProperties": false,
+  "properties": {
+    "actions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/action"
+      }
+    },
+    "updatedAt": {
+      "description": "UTC ISO 8601 timestamp serialized from the index generation date.",
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]{3})?Z$"
+    }
+  },
+  "$defs": {
+    "name": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 256,
+      "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 1024,
+      "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+    },
+    "action": {
+      "type": "object",
+      "required": ["id", "name", "description", "author", "version", "tags"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 256,
+          "pattern": "^[a-z]+(?:-[a-z]+)*$"
+        },
+        "name": {
+          "$ref": "#/$defs/name"
+        },
+        "description": {
+          "$ref": "#/$defs/description"
+        },
+        "author": {
+          "$ref": "#/$defs/name"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 64,
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+        },
+        "tags": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": ["Requires authentication", "Paid", "Free"]
+          }
+        }
+      }
+    }
+  }
+}
