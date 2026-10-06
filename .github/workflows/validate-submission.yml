@@ -36,5 +36,5 @@ jobs:
       - name: Fetch proposed submission
         run: git fetch --no-tags origin "$HEAD_SHA"
 
-      - name: Check submission changes and validate action
+      - name: Check submission changes and test release
         run: node --import tsx src/scripts/validate-submission.ts "$BASE_SHA" "$HEAD_SHA"

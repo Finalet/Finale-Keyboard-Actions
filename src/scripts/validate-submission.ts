@@ -67,6 +67,7 @@ function Run() {
     }
 
     action.Validate();
+    execFileSync("npm", ["run", "release", actionId], { stdio: "inherit" });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`❌ Failed: ${message}`);

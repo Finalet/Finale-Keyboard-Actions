@@ -1,0 +1,75 @@
+name: Release submission
+
+on:
+  pull_request_target:
+    types: [closed]
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  release-submission:
+    name: Release marketplace submission
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.title, '[SUBMISSION]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: release-submission-${{ github.event.pull_request.base.ref }}
+      queue: max
+    steps:
+      - name: Determine submitted action
+        id: submission
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              ...context.repo,
+              pull_number: context.payload.pull_request.number,
+              per_page: 100,
+            });
+            const actionIds = new Set();
+            for (const file of files) {
+              const match = file.filename.match(/^marketplace\/actions\/([a-z]+(?:-[a-z]+)*)\/(manifest\.ts|README\.md|versions\/\d+\.\d+\.\d+\.json)$/);
+              if (!match || !["added", "modified"].includes(file.status)) {
+                throw new Error(`Invalid submission file: "${file.filename}".`);
+              }
+              actionIds.add(match[1]);
+            }
+            if (actionIds.size !== 1) {
+              throw new Error("A submission must change exactly one action folder.");
+            }
+            core.setOutput("action-id", [...actionIds][0]);
+
+      - name: Check out merged branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Release action
+        env:
+          ACTION_ID: ${{ steps.submission.outputs.action-id }}
+        run: npm run release "$ACTION_ID"
+
+      - name: Commit and push release
+        env:
+          ACTION_ID: ${{ steps.submission.outputs.action-id }}
+          BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- "marketplace/actions/$ACTION_ID/manifest.json" "marketplace/actions/$ACTION_ID/releases.json" marketplace/index.json
+          git commit -m "Release $ACTION_ID (PR #$PR_NUMBER)"
+          git pull --rebase origin "$BASE_BRANCH"
+          git push origin "HEAD:refs/heads/$BASE_BRANCH"
