@@ -72,6 +72,65 @@ export function ValidateManifest(manifest: Manifest) {
       fieldValidators.minMaxLength(variable.description, minStringLength, maxDescriptionLength, `Variable description (${key})`);
     }
   }
+
+  // Validate action requests
+  const action = IO.loadJsonFile(getPath(`marketplace/actions/${manifest.id}/versions/${manifest.version}.json`));
+  const origins = new Set(manifest.services.flatMap((service) => service.origins.map((origin) => new URL(origin).origin)));
+  const usedVariables = new Set<string>();
+  ValidateActionRequests(action, manifest, origins, usedVariables);
+
+  for (const variable of Object.keys(manifest.variables ?? {})) {
+    if (!usedVariables.has(variable)) {
+      throw new Error(`Manifest variable "${variable}" is not used in any request in version "${manifest.version}".`);
+    }
+  }
+}
+
+function ValidateActionRequests(value: unknown, manifest: Manifest, origins: Set<string>, usedVariables: Set<string>, path = "action"): void {
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => ValidateActionRequests(item, manifest, origins, usedVariables, `${path}[${index}]`));
+  } else if (typeof value === "object" && value !== null) {
+    for (const [key, child] of Object.entries(value)) {
+      const childPath = `${path}.${key}`;
+      if (key === "request" && typeof child === "object" && child !== null) {
+        const context = `Version "${manifest.version}" ${childPath}`;
+
+        // Variables in the host or port make the origin user-defined.
+        if (typeof child.url === "string") {
+          const authority = child.url.match(/^https?:\/\/([^/?#]*)/i)?.[1] ?? "";
+          const hostAndPort = authority.slice(authority.lastIndexOf("@") + 1);
+          if (getVariables(hostAndPort).length === 0) {
+            const origin = fieldValidators.isValidURL(child.url, `${context} URL`).origin;
+            if (!origins.has(origin)) {
+              throw new Error(`${context} origin "${origin}" must be included in a manifest service.`);
+            }
+          }
+        }
+
+        for (const variable of new Set(getVariables(child))) {
+          usedVariables.add(variable);
+          if (!Action.dynamicVariables.includes(variable) && !Object.hasOwn(manifest.variables ?? {}, variable)) {
+            throw new Error(`${context} variable "${variable}" is missing a manifest variable entry.`);
+          }
+        }
+      } else {
+        ValidateActionRequests(child, manifest, origins, usedVariables, childPath);
+      }
+    }
+  }
+}
+
+function getVariables(value: unknown): string[] {
+  if (typeof value === "string") {
+    return value.match(/\{[a-zA-Z_][a-zA-Z0-9_]*\}/g) ?? [];
+  }
+  if (Array.isArray(value)) {
+    return value.flatMap(getVariables);
+  }
+  if (typeof value === "object" && value !== null) {
+    return Object.values(value).flatMap(getVariables);
+  }
+  return [];
 }
 
 function ValidateAllLeadingTrailingWhitespaces(value: unknown, path = "manifest"): void {
