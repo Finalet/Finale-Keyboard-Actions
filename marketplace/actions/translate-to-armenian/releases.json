@@ -1,0 +1,27 @@
+{
+  "id": "translate-to-armenian",
+  "releases": [
+    {
+      "version": "1.0.0",
+      "releaseDate": "2026-10-06T01:00:31.199Z",
+      "services": [
+        {
+          "name": "Google Translate",
+          "description": "Translates the selected text.",
+          "origins": [
+            "https://translation.googleapis.com"
+          ]
+        }
+      ],
+      "variables": {
+        "{gcp_key}": {
+          "name": "GCP Key",
+          "description": "The Google Cloud Platform API key used for translation requests."
+        }
+      },
+      "dynamicVariables": [
+        "{selected_text}"
+      ]
+    }
+  ]
+}

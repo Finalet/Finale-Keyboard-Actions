@@ -1,0 +1,16 @@
+{
+  "actions": [
+    {
+      "id": "translate-to-armenian",
+      "name": "Translate to Armenian",
+      "description": "Translate the selected text to Armenian.",
+      "author": "Finalet",
+      "version": "1.0.0",
+      "tags": [
+        "Requires authentication",
+        "Paid"
+      ]
+    }
+  ],
+  "updatedAt": "2026-10-06T01:00:31.200Z"
+}

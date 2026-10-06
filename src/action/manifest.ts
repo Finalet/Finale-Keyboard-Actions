@@ -44,8 +44,8 @@ export function ValidateManifest(manifest: Manifest) {
 
   const releases = IO.loadJsonFileIfExists<Releases>(`${getPath(`marketplace/actions/${manifest.id}`)}/releases.json`);
   const highestReleaseVersion = releases?.releases.reduce((prev, curr) => (compareVersion(curr.version, prev.version) === "higher" ? curr : prev), { version: "0.0.0" })?.version ?? "0.0.0";
-  if (compareVersion(manifest.version, highestReleaseVersion) !== "higher") {
-    throw new Error(`New version "${manifest.version}" must be higher than the highest released version "${highestReleaseVersion}".`);
+  if (compareVersion(manifest.version, highestReleaseVersion) === "lower") {
+    throw new Error(`New version "${manifest.version}" cannot be lower than the highest released version "${highestReleaseVersion}".`);
   }
 
   // Validate services
