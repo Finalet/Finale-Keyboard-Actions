@@ -51,7 +51,7 @@ export const dynamicVariables = [
   "{keyboard_locale}",
   "{device_timezone_name}",
   "{device_timezone_utc}",
-];
+] as const;
 
 export type ActionStatus = (typeof availableStatuses)[number];
 export type ActionTag = (typeof availableTags)[number];
