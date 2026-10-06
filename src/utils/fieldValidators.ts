@@ -20,8 +20,8 @@ const isLowercaseEnglishHyphenated = (str: string, fieldName: string = "String")
 };
 
 const isLowercaseEnglishUnderscored = (str: string, fieldName: string = "String") => {
-  if (!/^[a-z]+(?:_[a-z]+)*$/.test(str)) {
-    throw new Error(`${fieldName} must contain only lowercase English letters, with single underscores between words.`);
+  if (!/^[a-z0-9]+(?:_[a-z0-9]+)*$/.test(str)) {
+    throw new Error(`${fieldName} must contain only lowercase English letters and digits, with single underscores between words.`);
   }
 };
 

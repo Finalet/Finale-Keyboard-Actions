@@ -103,7 +103,7 @@ function ValidateActionRequests(value: unknown, manifest: Manifest, origins: Set
 
         for (const variable of new Set(getVariables(child))) {
           usedVariables.add(variable);
-          if (!dynamicVariables.includes(variable) && !Object.hasOwn(manifest.variables ?? {}, variable)) {
+          if (!dynamicVariables.some((dynamicVariable) => dynamicVariable === variable) && !Object.hasOwn(manifest.variables ?? {}, variable)) {
             throw new Error(`${context} variable "${variable}" is missing a manifest variable entry.`);
           }
         }
@@ -116,7 +116,7 @@ function ValidateActionRequests(value: unknown, manifest: Manifest, origins: Set
 
 function getVariables(value: unknown): string[] {
   if (typeof value === "string") {
-    return value.match(/\{[a-zA-Z_][a-zA-Z0-9_]*\}/g) ?? [];
+    return value.match(/\{[a-zA-Z0-9_]+\}/g) ?? [];
   }
   if (Array.isArray(value)) {
     return value.flatMap(getVariables);

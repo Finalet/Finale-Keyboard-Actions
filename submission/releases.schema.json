@@ -59,7 +59,7 @@
         "variables": {
           "type": "object",
           "propertyNames": {
-            "pattern": "^\\{[a-z]+(?:_[a-z]+)*\\}$"
+            "pattern": "^\\{[a-z0-9]+(?:_[a-z0-9]+)*\\}$"
           },
           "additionalProperties": {
             "$ref": "#/$defs/variable"
