@@ -109,6 +109,10 @@ export default class Action {
     console.log(`\n⏳ Releasing "${this.id}".`);
 
     const versionToRelease = this.manifest.version;
+    if (this.releases?.releases.some((release) => release.version === versionToRelease)) {
+      ThrowError.actionError(this.id, `Version "${versionToRelease}" has already been released.`);
+    }
+
     const actionJSON = this.versionFiles[versionToRelease];
 
     const newRelease: Release = {

@@ -19,7 +19,7 @@ export default defineManifest({
     },
   ],
   variables: {
-    "{gcp_key}": {
+    "{google_translate_key}": {
       name: "GCP Key",
       description: "The Google Cloud Platform API key used for translation requests.",
     },
